@@ -11,7 +11,7 @@ import {
 import todayImage from '../../assets/imgs/today.jpg';
 import commonStyles from '../commonStyles';
 import Task from '../components/Task';
-
+import AddTasks from './AddTasks';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 import moment from 'moment';
@@ -20,6 +20,8 @@ import 'moment/locale/pt-br';
 export default class TaskList extends react.Component {
   state = {
     showDoneTasks: true,
+    showAddTasks: false,
+    visibleTasks: [],
     tasks: [
       {
         id: Math.random(),
@@ -35,9 +37,26 @@ export default class TaskList extends react.Component {
       },
     ],
   };
+  //Like this componet is mounted, come this function
+  componentDidMount = () => {
+    this.filterTasks();
+  };
 
   toggleFilter = () => {
-    this.setState({showDoneTasks: !this.state.showDoneTasks});
+    //Am pass the function 'filterTasks' how params for it entouch the function
+    this.setState({showDoneTasks: !this.state.showDoneTasks}, this.filterTasks);
+  };
+
+  filterTasks = () => {
+    let visibleTasks = null;
+    if (this.state.showDoneTasks) {
+      visibleTasks = [...this.state.tasks];
+    } else {
+      const pedding = task => task.doneAt === null;
+      visibleTasks = this.state.tasks.filter(pedding);
+    }
+    this.setState({visibleTasks});
+    // this.setState({visibleTasks: visibleTasks});
   };
 
   toggleTask = taskId => {
@@ -47,7 +66,8 @@ export default class TaskList extends react.Component {
         task.doneAt = task.doneAt ? null : new Date();
       }
     });
-    this.setState({tasks});
+    //For what to call when checked
+    this.setState({tasks}, this.filterTasks);
     //this.setState({tasks: tasks}); the two are correct
   };
 
@@ -57,6 +77,10 @@ export default class TaskList extends react.Component {
       .format('ddd, D [de] MMMM');
     return (
       <View style={styles.container}>
+        <AddTasks
+          isVisible={this.state.showAddTasks}
+          onCancel={() => this.setState({showAddTasks: false})}
+        />
         <ImageBackground source={todayImage} style={styles.background}>
           <View style={styles.iconBar}>
             <TouchableOpacity onPress={this.toggleFilter}>
@@ -74,13 +98,18 @@ export default class TaskList extends react.Component {
         </ImageBackground>
         <View style={styles.taskList}>
           <FlatList
-            data={this.state.tasks}
+            data={this.state.visibleTasks}
             keyExtractor={item => `${item.id}`}
             renderItem={({item}) => (
               <Task {...item} toggleTask={this.toggleTask} />
             )}
           />
         </View>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => this.setState({showAddTasks: true})}>
+          <Icon name="plus" size={20} color={commonStyles.colors.secondary} />
+        </TouchableOpacity>
       </View>
     );
   }
@@ -119,5 +148,16 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     justifyContent: 'flex-end',
     marginTop: Platform.OS === 'ios' ? 30 : 10,
+  },
+  addButton: {
+    position: 'absolute',
+    right: 30,
+    bottom: 30,
+    height: 50,
+    width: 50,
+    backgroundColor: commonStyles.colors.today,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
