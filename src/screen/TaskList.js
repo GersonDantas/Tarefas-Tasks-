@@ -1,5 +1,6 @@
 import React, * as react from 'react';
 import {
+  Alert,
   View,
   Text,
   ImageBackground,
@@ -71,6 +72,22 @@ export default class TaskList extends react.Component {
     //this.setState({tasks: tasks}); the two are correct
   };
 
+  addTask = newTask => {
+    if (!newTask.desc || !newTask.desc.trim()) {
+      Alert.alert('Descrição não informada, passar uma descrição válida!');
+      return;
+    }
+
+    const tasks = [...this.state.tasks];
+    tasks.push({
+      id: Math.random,
+      desc: newTask.desc,
+      estimatAt: newTask.date,
+      doneAt: null,
+    });
+    this.setState({tasks, showAddTasks: false}, this.filterTasks);
+  };
+
   render() {
     const today = moment()
       .locale('pt-br')
@@ -80,6 +97,7 @@ export default class TaskList extends react.Component {
         <AddTasks
           isVisible={this.state.showAddTasks}
           onCancel={() => this.setState({showAddTasks: false})}
+          onSave={this.addTask}
         />
         <ImageBackground source={todayImage} style={styles.background}>
           <View style={styles.iconBar}>
@@ -107,7 +125,8 @@ export default class TaskList extends react.Component {
         </View>
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => this.setState({showAddTasks: true})}>
+          onPress={() => this.setState({showAddTasks: true})}
+          activeOpacity={0.7}>
           <Icon name="plus" size={20} color={commonStyles.colors.secondary} />
         </TouchableOpacity>
       </View>
