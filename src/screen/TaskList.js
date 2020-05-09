@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
+import AsyncStorage from '@react-native-community/async-storage';
 import todayImage from '../../assets/imgs/today.jpg';
 import commonStyles from '../commonStyles';
 import Task from '../components/Task';
@@ -18,29 +19,22 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import moment from 'moment';
 import 'moment/locale/pt-br';
 
+const initialState = {
+  showDoneTasks: true,
+  showAddTasks: false,
+  visibleTasks: [],
+  tasks: [],
+};
+
 export default class TaskList extends react.Component {
   state = {
-    showDoneTasks: true,
-    showAddTasks: false,
-    visibleTasks: [],
-    tasks: [
-      {
-        id: Math.random(),
-        desc: 'comprar um livro de React-native',
-        estimatAt: new Date(),
-        doneAt: new Date(),
-      },
-      {
-        id: Math.random(),
-        desc: 'ler um livro de React-native',
-        estimatAt: new Date(),
-        doneAt: null,
-      },
-    ],
+    ...initialState,
   };
   //Like this componet is mounted, come this function
-  componentDidMount = () => {
-    this.filterTasks();
+  componentDidMount = async () => {
+    const stateString = await AsyncStorage.getItem('tasksState');
+    const state = JSON.parse(stateString) || initialState;
+    this.setState(state, this.filterTasks);
   };
 
   toggleFilter = () => {
@@ -58,6 +52,7 @@ export default class TaskList extends react.Component {
     }
     this.setState({visibleTasks});
     // this.setState({visibleTasks: visibleTasks});
+    AsyncStorage.setItem('tasksState', JSON.stringify(this.state));
   };
 
   toggleTask = taskId => {
@@ -86,6 +81,11 @@ export default class TaskList extends react.Component {
       doneAt: null,
     });
     this.setState({tasks, showAddTasks: false}, this.filterTasks);
+  };
+
+  deleteTask = id => {
+    const tasks = this.state.tasks.filter(task => task.id !== id);
+    this.setState({tasks}, this.filterTasks);
   };
 
   render() {
@@ -119,7 +119,11 @@ export default class TaskList extends react.Component {
             data={this.state.visibleTasks}
             keyExtractor={item => `${item.id}`}
             renderItem={({item}) => (
-              <Task {...item} toggleTask={this.toggleTask} />
+              <Task
+                {...item}
+                onToggleTask={this.toggleTask}
+                onDelete={this.deleteTask}
+              />
             )}
           />
         </View>
@@ -137,6 +141,7 @@ export default class TaskList extends react.Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   background: {
     flex: 3,

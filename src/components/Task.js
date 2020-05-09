@@ -6,12 +6,13 @@ import {
   TouchableWithoutFeedback,
   TouchableOpacity,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
-import commonStyles from '../commonStyles';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 import momment from 'moment';
 import 'moment/locale/pt-br';
+
+import commonStyles from '../commonStyles';
 
 export default props => {
   const doneNotStyle =
@@ -23,15 +24,29 @@ export default props => {
     .locale('pt-br')
     .format('ddd,  D [de] MMMM');
   const getRightContent = () => {
-    console.debug('hjhjh');
-    <TouchableOpacity style={styles.right}>
-      <Icon name="trash" size={30} color="#FFF" />
-    </TouchableOpacity>;
+    return (
+      <TouchableOpacity
+        style={styles.right}
+        onPress={() => props.onDelete && props.onDelete(props.id)}>
+        <Icon name="trash" size={30} color="#FFF" />
+      </TouchableOpacity>
+    );
+  };
+  const getLeftContent = () => {
+    return (
+      <View style={styles.Left}>
+        <Icon name="trash" size={20} color="#FFF" style={styles.excludIcon} />
+        <Text style={styles.excludeText}>Excluir</Text>
+      </View>
+    );
   };
   return (
-    <Swipeable renderRightActions={getRightContent}>
+    <Swipeable
+      renderRightActions={getRightContent}
+      renderLeftActions={getLeftContent}
+      onSwipeableLeftOpen={() => props.onDelete && props.onDelete(props.id)}>
       <View style={styles.container}>
-        <TouchableWithoutFeedback onPress={() => props.toggleTask(props.id)}>
+        <TouchableWithoutFeedback onPress={() => props.onToggleTask(props.id)}>
           <View style={styles.checkContainer}>
             {/**Conclusão */}
             {getCheckView(props.doneAt)}
@@ -68,6 +83,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     alignItems: 'center',
     padding: 10,
+    backgroundColor: '#fff',
   },
   checkContainer: {
     width: '20%',
@@ -103,5 +119,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
     paddingHorizontal: 20,
+  },
+  excludIcon: {
+    marginLeft: 10,
+  },
+  Left: {
+    flex: 1,
+    backgroundColor: 'red',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  excludeText: {
+    fontFamily: commonStyles.fontFamily,
+    color: '#fff',
+    margin: 10,
+    fontSize: 20,
   },
 });
