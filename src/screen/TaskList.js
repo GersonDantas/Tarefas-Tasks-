@@ -12,6 +12,9 @@ import {
 import axios from 'axios';
 import AsyncStorage from '@react-native-community/async-storage';
 import todayImage from '../../assets/imgs/today.jpg';
+import tomorrowImage from '../../assets/imgs/tomorrow.jpg';
+import weekImage from '../../assets/imgs/week.jpg';
+import monthImage from '../../assets/imgs/month.jpg';
 import commonStyles from '../commonStyles';
 import Task from '../components/Task';
 import AddTasks from './AddTasks';
@@ -47,7 +50,9 @@ export default class TaskList extends react.Component {
 
   loadTasks = async () => {
     try {
-      const maxDate = moment().format('YYYY-MM-DD 23:59:59');
+      const maxDate = moment()
+        .add({days: this.props.daysAheard})
+        .format('YYYY-MM-DD 23:59:59');
       const res = await axios.get(`${server}/tasks?date=${maxDate}`);
       this.setState({tasks: res.data}, this.filterTasks);
     } catch (e) {
@@ -82,9 +87,8 @@ export default class TaskList extends react.Component {
     //carregando do banco
     try {
       await axios.put(`${server}/tasks/${taskId}/toggle`);
-      await this.loadTasks();
     } catch (e) {
-      showError(e + 'gufdgfg');
+      showError(e);
     }
 
     // const tasks = [...this.state.tasks];
@@ -115,9 +119,40 @@ export default class TaskList extends react.Component {
     }
   };
 
-  deleteTask = id => {
-    const tasks = this.state.tasks.filter(task => task.id !== id);
-    this.setState({tasks}, this.filterTasks);
+  deleteTask = async taskId => {
+    try {
+      await axios.delete(`${server}/tasks/${taskId}`);
+      this.setState(this.loadTasks);
+    } catch (e) {
+      showError(e);
+    }
+    // const tasks = this.state.tasks.filter(task => task.id !== id);
+    // this.setState({tasks}, this.filterTasks);
+  };
+
+  getImage = () => {
+    switch (this.props.daysAheard) {
+      case 0:
+        return todayImage;
+      case 1:
+        return tomorrowImage;
+      case 7:
+        return weekImage;
+      default:
+        return monthImage;
+    }
+  };
+  getColor = () => {
+    switch (this.props.daysAheard) {
+      case 0:
+        return commonStyles.colors.today;
+      case 1:
+        return commonStyles.colors.tomorrow;
+      case 7:
+        return commonStyles.colors.week;
+      default:
+        return commonStyles.colors.month;
+    }
   };
 
   render() {
@@ -131,8 +166,16 @@ export default class TaskList extends react.Component {
           onCancel={() => this.setState({showAddTasks: false})}
           onSave={this.addTask}
         />
-        <ImageBackground source={todayImage} style={styles.background}>
+        <ImageBackground source={this.getImage()} style={styles.background}>
           <View style={styles.iconBar}>
+            <TouchableOpacity
+              onPress={() => this.props.navigation.openDrawer()}>
+              <Icon
+                name="bars"
+                size={20}
+                color={commonStyles.colors.secondary}
+              />
+            </TouchableOpacity>
             <TouchableOpacity onPress={this.toggleFilter}>
               <Icon
                 name={this.state.showDoneTasks ? 'eye' : 'eye-slash'}
@@ -142,7 +185,7 @@ export default class TaskList extends react.Component {
             </TouchableOpacity>
           </View>
           <View style={styles.titleBar}>
-            <Text style={styles.title}>Hoje</Text>
+            <Text style={styles.title}>{this.props.title}</Text>
             <Text style={styles.subTitle}>{today}</Text>
           </View>
         </ImageBackground>
@@ -160,7 +203,7 @@ export default class TaskList extends react.Component {
           />
         </View>
         <TouchableOpacity
-          style={styles.addButton}
+          style={[styles.addButton, {backgroundColor: this.getColor()}]}
           onPress={() => this.setState({showAddTasks: true})}
           activeOpacity={0.7}>
           <Icon name="plus" size={20} color={commonStyles.colors.secondary} />
@@ -202,7 +245,7 @@ const styles = StyleSheet.create({
   iconBar: {
     flexDirection: 'row',
     marginHorizontal: 20,
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     marginTop: Platform.OS === 'ios' ? 30 : 10,
   },
   addButton: {
@@ -211,7 +254,6 @@ const styles = StyleSheet.create({
     bottom: 30,
     height: 50,
     width: 50,
-    backgroundColor: commonStyles.colors.today,
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',

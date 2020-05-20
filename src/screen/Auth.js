@@ -55,7 +55,6 @@ export default class Auth extends Component {
       });
 
       axios.defaults.headers.common.Authorization = `bearer ${res.data.token}`;
-      showSuccess('Seja bem vindo!');
       this.props.navigation.navigate('Home');
     } catch (e) {
       showError(e);
