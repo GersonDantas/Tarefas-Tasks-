@@ -11,21 +11,25 @@ import axios from 'axios';
 import backgroundImage from '../../assets/imgs/login.jpg';
 import commonStyles from '../commonStyles';
 import AuthInput from '../components/AuthInput';
-import {server, showError, showSucess} from '../common';
+import {server, showError, showSuccess} from '../common';
+
+const initialState = {
+  name: '',
+  email: 'gordimgerson@gmail.com',
+  password: '123456',
+  confirmPassword: '',
+  stageNew: false,
+};
 
 export default class Auth extends Component {
   state = {
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    stageNew: false,
+    ...initialState,
   };
   signinOrSignup = () => {
     if (this.state.stageNew) {
       this.signup();
     } else {
-      Alert.alert('Sucesso', 'logar');
+      this.signin();
     }
   };
   signup = async () => {
@@ -37,19 +41,44 @@ export default class Auth extends Component {
         confirmPassword: this.state.confirmPassword,
       });
 
-      showSucess('Usuario cadastrado!');
+      showSuccess('Usuario cadastrado!');
       this.setState({stageNew: false});
     } catch (e) {
       showError(e);
     }
   };
+  signin = async () => {
+    try {
+      const res = await axios.post(`${server}/signin`, {
+        email: this.state.email,
+        password: this.state.password,
+      });
+
+      axios.defaults.headers.common.Authorization = `bearer ${res.data.token}`;
+      showSuccess('Seja bem vindo!');
+      this.props.navigation.navigate('Home');
+    } catch (e) {
+      showError(e);
+    }
+  };
+
   render() {
+    const validations = [];
+    validations.push(this.state.email && this.state.email.includes('@'));
+    validations.push(this.state.password && this.state.password.length >= 6);
+
+    if (this.state.stageNew) {
+      validations.push(this.state.name && this.state.name.trim().length >= 3);
+      validations.push(this.state.password === this.state.confirmPassword);
+    }
+
+    const validForm = validations.reduce((t, a) => t && a);
     return (
       <ImageBackground source={backgroundImage} style={styles.background}>
-        <Text style={styles.titlle}>Tasks</Text>
+        <Text style={styles.title}>Tasks</Text>
         <View style={styles.formContainer}>
           <Text style={styles.subtitle}>
-            {this.state.stageNew ? 'Crie sua conta' : 'Informe seus dados'}
+            {this.state.stageNew ? 'Crie a sua conta' : 'Informe seus dados'}
           </Text>
           {this.state.stageNew && (
             <AuthInput
@@ -62,31 +91,36 @@ export default class Auth extends Component {
           )}
           <AuthInput
             icon="at"
-            placeholder="email"
+            placeholder="E-mail"
             value={this.state.email}
             style={styles.input}
             onChangeText={email => this.setState({email})}
           />
           <AuthInput
             icon="lock"
-            placeholder="senha"
+            placeholder="Senha"
             value={this.state.password}
             style={styles.input}
-            onChangeText={password => this.setState({password})}
             secureTextEntry={true}
+            onChangeText={password => this.setState({password})}
           />
           {this.state.stageNew && (
             <AuthInput
               icon="asterisk"
-              placeholder="confimar senha"
+              placeholder="Confirmação de Senha"
               value={this.state.confirmPassword}
               style={styles.input}
-              onChangeText={confirmPassword => this.setState({confirmPassword})}
               secureTextEntry={true}
+              onChangeText={confirmPassword => this.setState({confirmPassword})}
             />
           )}
-          <TouchableOpacity onPress={this.signinOrSignup}>
-            <View style={styles.button}>
+          <TouchableOpacity onPress={this.signinOrSignup} disabled={!validForm}>
+            <View
+              style={[
+                styles.button,
+                // eslint-disable-next-line react-native/no-inline-styles
+                validForm ? {} : {backgroundColor: '#aaa'},
+              ]}>
               <Text style={styles.buttonText}>
                 {this.state.stageNew ? 'Registrar' : 'Entrar'}
               </Text>

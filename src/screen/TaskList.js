@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
+import axios from 'axios';
 import AsyncStorage from '@react-native-community/async-storage';
 import todayImage from '../../assets/imgs/today.jpg';
 import commonStyles from '../commonStyles';
@@ -16,6 +17,7 @@ import Task from '../components/Task';
 import AddTasks from './AddTasks';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
+import {server, showError, showSuccess} from '../common';
 import moment from 'moment';
 import 'moment/locale/pt-br';
 
@@ -33,8 +35,24 @@ export default class TaskList extends react.Component {
   //Like this componet is mounted, come this function
   componentDidMount = async () => {
     const stateString = await AsyncStorage.getItem('tasksState');
-    const state = JSON.parse(stateString) || initialState;
-    this.setState(state, this.filterTasks);
+    const savedState = JSON.parse(stateString) || initialState;
+    this.setState(
+      {
+        showDoneTasks: savedState.showDoneTasks,
+      },
+      this.filterTasks,
+    );
+    this.loadTasks();
+  };
+
+  loadTasks = async () => {
+    try {
+      const maxDate = moment().format('YYYY-MM-DD 23:59:59');
+      const res = await axios.get(`${server}/tasks?date=${maxDate}`);
+      this.setState({tasks: res.data}, this.filterTasks);
+    } catch (e) {
+      showError(e);
+    }
   };
 
   toggleFilter = () => {
@@ -52,35 +70,49 @@ export default class TaskList extends react.Component {
     }
     this.setState({visibleTasks});
     // this.setState({visibleTasks: visibleTasks});
-    AsyncStorage.setItem('tasksState', JSON.stringify(this.state));
+    AsyncStorage.setItem(
+      'tasksState',
+      JSON.stringify({
+        showDoneTasks: this.state.showDoneTasks,
+      }),
+    );
   };
 
-  toggleTask = taskId => {
-    const tasks = [...this.state.tasks];
-    tasks.forEach(task => {
-      if (taskId === task.id) {
-        task.doneAt = task.doneAt ? null : new Date();
-      }
-    });
-    //For what to call when checked
-    this.setState({tasks}, this.filterTasks);
-    //this.setState({tasks: tasks}); the two are correct
+  toggleTask = async taskId => {
+    //carregando do banco
+    try {
+      await axios.put(`${server}/tasks/${taskId}/toggle`);
+      await this.loadTasks();
+    } catch (e) {
+      showError(e + 'gufdgfg');
+    }
+
+    // const tasks = [...this.state.tasks];
+    // tasks.forEach(task => {
+    //   if (taskId === task.id) {
+    //     task.doneAt = task.doneAt ? null : new Date();
+    //   }
+    // });
+    // //For what to call when checked
+    // this.setState({tasks}, this.filterTasks);
+    // //this.setState({tasks: tasks}); the two are correct
   };
 
-  addTask = newTask => {
+  addTask = async newTask => {
     if (!newTask.desc || !newTask.desc.trim()) {
       Alert.alert('Descrição não informada, passar uma descrição válida!');
       return;
     }
 
-    const tasks = [...this.state.tasks];
-    tasks.push({
-      id: Math.random,
-      desc: newTask.desc,
-      estimatAt: newTask.date,
-      doneAt: null,
-    });
-    this.setState({tasks, showAddTasks: false}, this.filterTasks);
+    try {
+      await axios.post(`${server}/tasks`, {
+        desc: newTask.desc,
+        estimateAt: newTask.date,
+      });
+      this.setState({showAddTasks: false}, this.loadTasks);
+    } catch (e) {
+      showError(e);
+    }
   };
 
   deleteTask = id => {
