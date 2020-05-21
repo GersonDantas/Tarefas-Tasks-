@@ -1,12 +1,30 @@
 import React from 'react';
-import {Platform, ScrollView, View, Text, StyleSheet} from 'react-native';
+import {
+  Platform,
+  ScrollView,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
 import {DrawerItems} from 'react-navigation-drawer';
 import {Gravatar} from 'react-native-gravatar';
+import commonStyle from '../commonStyles';
+
+import axios from 'axios';
+import AsyncStorage from '@react-native-community/async-storage';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 export default props => {
+  const logout = () => {
+    delete axios.defaults.headers.common['Authorization'];
+    AsyncStorage.removeItem('userData');
+    props.navigation.navigate('Auth');
+  }
   return (
     <ScrollView>
       <View style={styles.header}>
+        <Text style={styles.title}>Tasks</Text>
         <Gravatar
           style={styles.avatar}
           options={{
@@ -15,10 +33,15 @@ export default props => {
           }}
         />
         <View style={styles.userInfo}>
-          <Text>{props.navigation.getParam('name')}</Text>
-          <Text>{props.navigation.getParam('email')}</Text>
+          <Text style={styles.name}>{props.navigation.getParam('name')}</Text>
+          <Text style={styles.email}>{props.navigation.getParam('email')}</Text>
         </View>
       </View>
+      <TouchableOpacity onPress={logout}>
+        <View style={styles.logoutIcon}>
+          <Icon name="sign-out" size={30} color="#800" />
+        </View>
+      </TouchableOpacity>
       <DrawerItems {...props} />
     </ScrollView>
   );
@@ -29,15 +52,37 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: '#ddd',
   },
+  title: {
+    color: '#000',
+    fontFamily: commonStyle.fontFamily,
+    fontSize: 30,
+    paddingTop: Platform.OS === 'ios' ? 70 : 30,
+    padding: 10,
+  },
   avatar: {
     width: 60,
     height: 60,
     borderWidth: 3,
     borderRadius: 30,
     margin: 10,
-    marginTop: Platform.OS === 'ios' ? 50 : 10,
   },
   userInfo: {
-    height: 20,
+    marginLeft: 15,
   },
+  name: {
+    fontFamily: commonStyle.fontFamily,
+    fontSize: 20,
+    color: commonStyle.colors.mainText,
+    marginBottom: 5,
+  },
+  email: {
+    fontFamily: commonStyle.fontFamily,
+    fontSize: 15,
+    color: commonStyle.colors.subText,
+    marginBottom: 15,
+  },
+  logoutIcon: {
+    marginLeft: 10,
+    margin: 10,
+  }
 });

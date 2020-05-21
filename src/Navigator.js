@@ -1,6 +1,7 @@
 import React from 'react';
 import {createAppContainer, createSwitchNavigator} from 'react-navigation';
 import {createDrawerNavigator} from 'react-navigation-drawer';
+import AuthOrApp from './screen/AuthOrApp';
 import TaskList from './screen/TaskList';
 import Auth from './screen/Auth';
 import Menu from './screen/Menu';
@@ -16,10 +17,8 @@ const menuConfig = {
       fontSize: 20,
     },
     activeLabelStyle: {
-      fontFamily: commonStyles.fontFamily,
-      fontWeight: 'bold',
-      fontSize: 20,
       color: '#080',
+      fontWeight: 'bold',
     },
   },
 };
@@ -58,6 +57,10 @@ const menuRoutes = {
 const menuNavigator = createDrawerNavigator(menuRoutes, menuConfig);
 
 const mainRoutes = {
+  AuthOrApp: {
+    name: 'AuthOrApp',
+    screen: AuthOrApp,
+  },
   Auth: {
     name: 'Auth',
     screen: Auth,
@@ -69,7 +72,7 @@ const mainRoutes = {
 };
 
 const mainNavigator = createSwitchNavigator(mainRoutes, {
-  initialRouteName: 'Auth',
+  initialRouteName: 'AuthOrApp',
 });
 
 export default createAppContainer(mainNavigator);
